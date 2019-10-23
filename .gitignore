@@ -105,3 +105,6 @@ venv.bak/
 
 # token file
 token.txt
+
+# generated statistic file
+stats.txt
