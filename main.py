@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from os import walk
+from os import walk, path
 from random import randint
 
 from discord import File
@@ -17,10 +17,10 @@ def main():
     status.print_status('Bot token loaded.')
 
     # load stats
-    try:
+    if path.exists("stats.txt"):
         statistics = fileOperations.loadStats()
         status.print_status("Stats loaded successfully.")
-    except FileNotFoundError:
+    else:
         statistics = {"eightballs": 0, "jokes": 0, "randoms": 0, "thanks": 0, "stats": 0, "ribs": 0}
         fileOperations.saveStats(statistics)
         status.print_status("No previous stats found, initiated new stats.")
@@ -96,165 +96,174 @@ def main():
     # register bot commands
     @bot.command(help='Closes the bot. Only callable by admins.')
     async def shutdown(ctx):
-        if ctx.message.channel.id not in channelBlacklist:
-            if perms.checkPermissions([ROLE_ADMIN, ROLE_MOD_SUPER], ctx.message.author):
-                status.print_status('Bot disconnecting...')
-                fileOperations.saveStats(statistics)
-                await ctx.send('ok bye ._.')
-                await bot.close()
-                exit(0)
-            else:
-                status.print_status('Got shutdown command from user with insufficient permissions')
-                await ctx.send("You don't have the power to stop me, fool")
+        if ctx.message.channel.id in channelBlacklist:
+            status.print_status('Tried to call command in blacklisted channel, ignoring...')
+            return
+
+        if perms.checkPermissions([ROLE_ADMIN, ROLE_MOD_SUPER], ctx.message.author):
+            status.print_status('Bot disconnecting...')
+            fileOperations.saveStats(statistics)
+            await ctx.send('ok bye ._.')
+            await bot.close()
+            exit(0)
         else:
-            status.print_status('Tried to call shutdown command in blacklisted channel, ignoring...')
+            status.print_status('Got shutdown command from user with insufficient permissions')
+            await ctx.send("You don't have the power to stop me, fool")
 
     @bot.command(help='Gives a random eight ball answer')
     async def eightball(ctx):
-        if ctx.message.channel.id not in channelBlacklist:
-            status.print_status("{0} requested eight ball...".format(ctx.message.author.name))
-            statistics["eightballs"] = statistics["eightballs"] + 1
+        if ctx.message.channel.id in channelBlacklist:
+            status.print_status('Tried to call command in blacklisted channel, ignoring...')
+            return
 
-            answer = randint(0, len(ballAnswers) - 1)
-            status.print_status("Eight ball rolled {0}".format(str(answer)))
+        status.print_status("{0} requested eight ball...".format(ctx.message.author.name))
+        statistics["eightballs"] = statistics["eightballs"] + 1
 
-            await ctx.send(ballAnswers[answer])
-        else:
-            status.print_status('Tried to call eightball command in blacklisted channel, ignoring...')
+        answer = randint(0, len(ballAnswers) - 1)
+        status.print_status("Eight ball rolled {0}".format(str(answer)))
+
+        await ctx.send(ballAnswers[answer])
 
     @bot.command(help='Generates a random number between 0 and 100 (if no parameters are given), 0 to x (if one'
                       ' parameter is given) or x and y (if two parameters are given)')
     async def random(ctx, *args):
-        if ctx.message.channel.id not in channelBlacklist:
-            status.print_status("{0} requested random number...".format(ctx.message.author.name))
-            statistics["randoms"] = statistics["randoms"] + 1
+        if ctx.message.channel.id in channelBlacklist:
+            status.print_status('Tried to call command in blacklisted channel, ignoring...')
+            return
 
-            try:
-                if len(args) == 0:
-                    status.print_status("[RANDOM] no parameters, running default roll...")
+        status.print_status("{0} requested random number...".format(ctx.message.author.name))
+        statistics["randoms"] = statistics["randoms"] + 1
 
-                    await ctx.send("No range given, defaulting to 0 - 100...")
-                    answer = randint(0, 100)
-                    await ctx.send("Random number: {0}".format(str(answer)))
-                elif len(args) == 1:
-                    status.print_status("[RANDOM] 1 parameter, running roll...")
+        try:
+            if len(args) == 0:
+                status.print_status("[RANDOM] no parameters, running default roll...")
 
-                    answer = randint(0, int(args[0]))
-                    await ctx.send("Random number: {0}".format(str(answer)))
-                elif len(args) == 2:
-                    status.print_status("[RANDOM] 2 parameters, running roll...")
+                await ctx.send("No range given, defaulting to 0 - 100...")
+                answer = randint(0, 100)
+                await ctx.send("Random number: {0}".format(str(answer)))
 
-                    int1 = int(args[0])
-                    int2 = int(args[1])
+            elif len(args) == 1:
+                status.print_status("[RANDOM] 1 parameter, running roll...")
 
-                    if int1 > int2:
-                        int1, int2 = int2, int1
+                answer = randint(0, int(args[0]))
+                await ctx.send("Random number: {0}".format(str(answer)))
 
-                    answer = randint(int1, int2)
-                    await ctx.send("Random number: {0}".format(str(answer)))
-                else:
-                    status.print_status("[RANDOM] too many parameters, aborting...")
-                    await ctx.send("Please only supply a maximum of two numbers. Thank")
+            elif len(args) == 2:
+                status.print_status("[RANDOM] 2 parameters, running roll...")
 
-            except TypeError:
-                await ctx.send("One of your numbers is not even a number. What the hell are you doing.")
-            except ValueError:
-                await ctx.send("One of your numbers is not even a number. What the hell are you doing.")
+                int1 = int(args[0])
+                int2 = int(args[1])
+                if int1 > int2:
+                    int1, int2 = int2, int1
+                answer = randint(int1, int2)
+                await ctx.send("Random number: {0}".format(str(answer)))
 
-        else:
-            status.print_status('Tried to call random command in blacklisted channel, ignoring...')
+            else:
+                status.print_status("[RANDOM] too many parameters, aborting...")
+                await ctx.send("Please only supply a maximum of two numbers. Thank")
+
+        except TypeError:
+            await ctx.send("One of your numbers is not even a number. What the hell are you doing.")
+        except ValueError:
+            await ctx.send("One of your numbers is not even a number. What the hell are you doing.")
 
     @bot.command(help='Make sure to thank your bot')
     async def thanks(ctx):
-        if ctx.message.channel.id not in channelBlacklist:
-            status.print_status("{0} said thanks :3".format(ctx.message.author.name))
-            statistics["thanks"] = statistics["thanks"] + 1
+        if ctx.message.channel.id in channelBlacklist:
+            status.print_status('Tried to call command in blacklisted channel, ignoring...')
+            return
 
-            answer = randint(0, len(thankYous) - 1)
-            status.print_status("Thank you message: {0}".format(str(answer)))
+        status.print_status("{0} said thanks :3".format(ctx.message.author.name))
+        statistics["thanks"] = statistics["thanks"] + 1
 
-            await ctx.send(thankYous[answer])
-        else:
-            status.print_status('Tried to call thanks command in blacklisted channel, ignoring...')
+        answer = randint(0, len(thankYous) - 1)
+        status.print_status("Thank you message: {0}".format(str(answer)))
+
+        await ctx.send(thankYous[answer])
 
     @bot.command(help='Generates a random joke using advanced AI')
     async def joke(ctx):
-        if ctx.message.channel.id not in channelBlacklist:
-            status.print_status("{0} requested joke".format(ctx.message.author.name))
-            statistics["jokes"] = statistics["jokes"] + 1
+        if ctx.message.channel.id in channelBlacklist:
+            status.print_status('Tried to call command in blacklisted channel, ignoring...')
+            return
 
-            begin = randint(0, jokeBeginCount)
-            person1 = randint(0, jokePeopleCount)
-            action = randint(0, jokeActionCount)
-            location = randint(0, jokeLocationCount)
-            twist = randint(0, jokeTwistCount)
-            person2 = randint(0, jokePeopleCount)
-            punchline = randint(0, jokePunchlineCount)
+        status.print_status("{0} requested joke".format(ctx.message.author.name))
+        statistics["jokes"] = statistics["jokes"] + 1
 
-            await ctx.send(
-                '' + jokeBegin[begin] + jokePeople[person1] + jokeAction[action] + jokeLocation[location] + jokeTwist[
-                    twist] + jokePeople[person2] + jokePunchline[punchline])
+        begin = randint(0, jokeBeginCount)
+        person1 = randint(0, jokePeopleCount)
+        action = randint(0, jokeActionCount)
+        location = randint(0, jokeLocationCount)
+        twist = randint(0, jokeTwistCount)
+        person2 = randint(0, jokePeopleCount)
+        punchline = randint(0, jokePunchlineCount)
 
-        else:
-            status.print_status('Tried to call joke command in blacklisted channel, ignoring...')
+        await ctx.send(
+            '' + jokeBegin[begin] + jokePeople[person1] + jokeAction[action] + jokeLocation[location] + jokeTwist[
+                twist] + jokePeople[person2] + jokePunchline[punchline])
 
     @bot.command(help='Outputs stats about bot usage')
     async def stats(ctx):
-        if ctx.message.channel.id not in channelBlacklist:
-            status.print_status("{0} requested stats".format(ctx.message.author.name))
-            statistics["stats"] = statistics["stats"] + 1
+        if ctx.message.channel.id in channelBlacklist:
+            status.print_status('Tried to call command in blacklisted channel, ignoring...')
+            return
 
-            await ctx.send(
-                'So far, the bot has given {0} eightball answers, has generated {1} random numbers, sent {2} ribs and '
-                'told {3} jokes. It has been thanked {4} times.'.format(str(statistics["eightballs"]),
-                                                                        str(statistics["randoms"]),
-                                                                        str(statistics["ribs"]),
-                                                                        str(statistics["jokes"]),
-                                                                        str(statistics["thanks"])))
+        status.print_status("{0} requested stats".format(ctx.message.author.name))
+        statistics["stats"] = statistics["stats"] + 1
+
+        await ctx.send(
+            'So far, the bot has given {0} eightball answers, has generated {1} random numbers, sent {2} ribs and '
+            'told {3} jokes. It has been thanked {4} times.'.format(str(statistics["eightballs"]),
+                                                                    str(statistics["randoms"]),
+                                                                    str(statistics["ribs"]),
+                                                                    str(statistics["jokes"]),
+                                                                    str(statistics["thanks"])))
 
     @bot.command(help='Outputs an invite link')
     async def invite(ctx):
-        if ctx.message.channel.id not in channelBlacklist:
-            await ctx.send("https://discordapp.com/invite/JWhvAFW")
-        else:
-            status.print_status('Tried to call invite command in blacklisted channel, ignoring...')
+        if ctx.message.channel.id in channelBlacklist:
+            status.print_status('Tried to call command in blacklisted channel, ignoring...')
+            return
+
+        await ctx.send("https://discordapp.com/invite/JWhvAFW")
 
     @bot.command(help='ribs')
     async def ribs(ctx):
-        if ctx.message.channel.id not in channelBlacklist:
-            status.print_status("{0} requested ribs".format(ctx.message.author.name))
+        if ctx.message.channel.id in channelBlacklist:
+            status.print_status('Tried to call command in blacklisted channel, ignoring...')
+            return
 
-            if ctx.message.author.id not in ribTimeout:
-                ribTimeout[ctx.message.author.id] = datetime.now()
+        status.print_status("{0} requested ribs".format(ctx.message.author.name))
 
-                ribNr = randint(0, len(ribPictures) - 1)
-                await ctx.message.channel.send(file=File(r"ribs/" + ribPictures[ribNr]))
+        if ctx.message.author.id not in ribTimeout:
+            ribTimeout[ctx.message.author.id] = datetime.now()
 
-                statistics["ribs"] = statistics["ribs"] + 1
-                return
+            ribNr = randint(0, len(ribPictures) - 1)
+            await ctx.message.channel.send(file=File(r"ribs/" + ribPictures[ribNr]))
 
-            compareTime = ribTimeout[ctx.message.author.id] + timedelta(seconds=ribTimeoutInterval)
+            statistics["ribs"] = statistics["ribs"] + 1
+            return
 
-            if datetime.now() > compareTime:
-                statistics["ribs"] = statistics["ribs"] + 1
+        compareTime = ribTimeout[ctx.message.author.id] + timedelta(seconds=ribTimeoutInterval)
 
-                ribTimeout[ctx.message.author.id] = datetime.now()
-                ribNr = randint(0, len(ribPictures) - 1)
-                await ctx.message.channel.send(file=File(r"ribs/" + ribPictures[ribNr]))
-            else:
-                status.print_status('User is currently in timeout')
-                await ctx.send("Don't spam the rib")
+        if datetime.now() > compareTime:
+            statistics["ribs"] = statistics["ribs"] + 1
+
+            ribTimeout[ctx.message.author.id] = datetime.now()
+            ribNr = randint(0, len(ribPictures) - 1)
+            await ctx.message.channel.send(file=File(r"ribs/" + ribPictures[ribNr]))
         else:
-            status.print_status('Tried to call ribs command in blacklisted channel, ignoring...')
+            status.print_status('User is currently in timeout')
+            await ctx.send("Don't spam the rib")
 
     # run bot with token
     bot.run(token)
 
 
 if __name__ == "__main__":
-    VERSION = "0.9"
-    CURRENT_YEAR = "2019"
+    VERSION = "0.9.1"
+    COPYRIGHT_YEAR = "2019"
     AUTHOR = "SYRAPT0R"
 
-    status.print_status('LAUNCHING SYRAPTB0T {0}, (c) {1} {2}'.format(VERSION, CURRENT_YEAR, AUTHOR))
+    status.print_status('LAUNCHING SYRAPTB0T {0}, (c) {1} {2}'.format(VERSION, COPYRIGHT_YEAR, AUTHOR))
     main()
