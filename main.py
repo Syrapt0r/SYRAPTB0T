@@ -13,6 +13,10 @@ def main():
     status.print_status('Loading bot token...')
 
     token = fileOperations.readToken()
+    if token is None:
+        status.print_status("Token file not found.\nMake sure the file token.txt exists in the same folder as this "
+                            "script.")
+        exit(0)
 
     status.print_status('Bot token loaded.')
 
@@ -261,7 +265,7 @@ def main():
 
 
 if __name__ == "__main__":
-    VERSION = "0.9.1"
+    VERSION = "0.9.2"
     COPYRIGHT_YEAR = "2019"
     AUTHOR = "SYRAPT0R"
 

@@ -1,5 +1,7 @@
-import json
 import configparser
+import json
+from os import path
+
 from syraptbot import status
 
 
@@ -23,8 +25,11 @@ def saveStats(stats):
 
 
 def readToken():
-    configParser = configparser.RawConfigParser()
-    configFile = r'token.txt'
-    configParser.read(configFile)
+    if path.exists("token.txt"):
+        configParser = configparser.RawConfigParser()
+        configFile = r'token.txt'
+        configParser.read(configFile)
+    else:
+        return None
 
     return configParser.get('token', 'token')
