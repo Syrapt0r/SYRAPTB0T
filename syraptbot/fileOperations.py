@@ -7,9 +7,14 @@ from syraptbot import status
 
 def loadStats():
     status.print_status("Loading stats...")
-    with open("stats.txt", "r") as conf:
-        confData = conf.readlines()
-        conf.close()
+
+    try:
+        with open("stats.txt", "r") as conf:
+            confData = conf.readlines()
+            conf.close()
+
+    except IOError:
+        return "STAT_LOAD_ERROR"
 
     statsDecode = json.loads(confData[0])
     return statsDecode
@@ -19,17 +24,22 @@ def saveStats(stats):
     status.print_status("Saving stats...")
 
     statsJson = json.dumps(stats)
+
     with open("stats.txt", "w") as conf:
         conf.write(statsJson)
         conf.close()
 
 
 def readToken():
-    if path.exists("token.txt"):
+    configFile = 'token.txt'
+
+    if path.exists(configFile):
         configParser = configparser.RawConfigParser()
-        configFile = r'token.txt'
         configParser.read(configFile)
     else:
-        return None
+        return "NO_TOKEN_FILE"
 
-    return configParser.get('token', 'token')
+    if configParser.has_option('token', 'token'):
+        return configParser.get('token', 'token')
+    else:
+        return "MALFORMED_TOKEN_FILE"

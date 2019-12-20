@@ -6,34 +6,48 @@ from discord import File
 from discord.ext import commands
 
 from syraptbot import perms, status, fileOperations
+import re
 
 
 def main():
-    # read config
+    # load bot token
     status.print_status('Loading bot token...')
-
     token = fileOperations.readToken()
-    if token is None:
-        status.print_status("Token file not found.\nMake sure the file token.txt exists in the same folder as this "
+
+    # token file error handling
+    if token is "NO_TOKEN_FILE":
+        status.print_status("Token file not found. Make sure the file token.txt exists in the same folder as this "
                             "script.")
+        exit(0)
+    elif token is "MALFORMED_TOKEN_FILE":
+        status.print_status("Token file seems to be malformed. Make sure the file contains a key called \"token\".")
         exit(0)
 
     status.print_status('Bot token loaded.')
 
-    # load stats
+    # load statistics
     if path.exists("stats.txt"):
         statistics = fileOperations.loadStats()
+
+        if statistics == "STAT_LOAD_ERROR":
+            status.print_status("Error loading statistics. Make sure the statistic file is not malformed.")
+            exit(0)
+
         status.print_status("Stats loaded successfully.")
     else:
         statistics = {"eightballs": 0, "jokes": 0, "randoms": 0, "thanks": 0, "stats": 0, "ribs": 0}
         fileOperations.saveStats(statistics)
         status.print_status("No previous stats found, initiated new stats.")
 
-    # some constants
+    # define some constants
     ROLE_ADMIN = "BIG GAY"
     ROLE_MOD_SUPER = "SUPERMODS OF DOOM"
 
-    # get ribs
+    # epic regex
+    notEmpty = "[A-Za-z0-9?!.,:]"
+    notEmptyR = re.compile(notEmpty)
+
+    # load rib picture paths
     ribPictures = []
     for (dirpath, dirnames, filenames) in walk("ribs"):
         ribPictures.extend(filenames)
@@ -41,11 +55,11 @@ def main():
 
     status.print_status('Loaded {0} rib pictures'.format(len(ribPictures)))
 
-    # init timeout
+    # define rib picture timeout
     ribTimeout = {}
     ribTimeoutInterval = 300
 
-    # 8ball answers
+    # define 8ball answers
     ballAnswers = ["It is certain", "Without a doubt", "You may rely on it", "Yes definitely",
                    "It is decidedly so", "As I see it, yes", "Most likely", "Yes", "Outlook good",
                    "Signs point to yes", "Reply hazy try again", "Better not tell you now", "Ask again later",
@@ -54,9 +68,15 @@ def main():
                    "Okay but only once", "Fiiine", "Count to 10 and ask again", "Why would I know that", "what",
                    "If you dare ask me that again I will ban you", "no u", "Sure thing bro",
                    "Hm? Sorry, wasn't listening"]
-    status.print_status('Loaded {0} eightball answers'.format(len(ballAnswers)))
 
-    # joke setup
+    ballAnswersEmpty = ["what", "this works way better if you actually ask something", "and your question is...?",
+                        "uhhhh", "come back if you want an actual answer", "speak up", "[inhales] b o i", "right...",
+                        "did you seriously wake me up for this", "whut", "ok boomer", ">eIgHtBaLl"]
+
+    status.print_status('Loaded {0} eightball answers'.format(len(ballAnswers)))
+    status.print_status('Loaded {0} empty eightball answers'.format(len(ballAnswersEmpty)))
+
+    # define joke parts
     jokeBegin = ["So a ", "A ", "So this ", "This ", "Uh, this ", "A singular ", "The "]
     jokePeople = ["man ", "woman ", "child ", "horse ", "car ", "bird ", "skeleton ", "fairy ", "dragon ", "rib ",
                   "huge dude ", "big man ", "person ", "kid ", "dude ", "cowboy ", "sheriff ", "boat ", "Mario ",
@@ -82,18 +102,34 @@ def main():
     jokeTwistCount = len(jokeTwist) - 1
     jokePunchlineCount = len(jokePunchline) - 1
 
-    # thankings
+    # define bot thank responses
     thankYous = ["You're welcome", "No u", "aw stop", "nawww", ":3", "No prob", "Happy to help", "^-^",
                  "stahp it", "Thanks :3", "Just doing my best c:", "no thank YOU", "It's my duty ^-^",
                  "ᶦ ᵈᶦᵈⁿᵗ ʰᵃᵛᵉ ᵃ ᶜʰᵒᶦᶜᵉ I mean thanks ^-^"]
+
     status.print_status('Loaded {0} thanking answers'.format(len(thankYous)))
 
-    # blacklisted channels
+    # streem shid
+    liveMessages = ["Ayy <@&657671322813595670>, it's ya boi, uhh, I am like, streaming right now. Lol. So click like, "
+                    "here: https://www.twitch.tv/syrapt0r", "Wzup <@&657671322813595670>, I is live waho "
+                                                            "https://www.twitch.tv/syrapt0r",
+                    "Attention all <@&657671322813595670>, click "
+                    "https://www.twitch.tv/syrapt0r to win a free Xbox maybe", "<@&657671322813595670>! Assemble! or "
+                                                                               "something i dunno https://www.twitch.tv/syrapt0r",
+                    "https://www.twitch.tv/syrapt0r is now "
+                    "featuring epic stuff for <@&657671322813595670>. And other people. That's how twitch works.",
+                    "https://www.twitch.tv/syrapt0r is live. Go get em <@&657671322813595670>.", "Where were you when "
+                                                                                                 "https://www.twitch.tv/syrapt0r went live? I was eating dorito when <@&657671322813595670> call: "
+                                                                                                 "'felic is liv' 'no'"]
+
+    status.print_status('Loaded {0} streaming notifications'.format(len(liveMessages)))
+
+    # initialize blacklisted channels
     channelBlacklist = [473830853127176197, 473872015279783976, 473878623229575178, 633315876757831690,
                         618472969735241759, 635260211178897419, 473877321711878175]
     status.print_status('Loaded {0} blacklisted channels'.format(len(channelBlacklist)))
 
-    # get bot instance
+    # set up bot instance
     bot = commands.Bot(command_prefix='>')
     status.print_status('Bot connected!')
 
@@ -107,15 +143,17 @@ def main():
         if perms.checkPermissions([ROLE_ADMIN, ROLE_MOD_SUPER], ctx.message.author):
             status.print_status('Bot disconnecting...')
             fileOperations.saveStats(statistics)
+
             await ctx.send('ok bye ._.')
             await bot.close()
+
             exit(0)
         else:
             status.print_status('Got shutdown command from user with insufficient permissions')
             await ctx.send("You don't have the power to stop me, fool")
 
     @bot.command(help='Gives a random eight ball answer')
-    async def eightball(ctx):
+    async def eightball(ctx, *args):
         if ctx.message.channel.id in channelBlacklist:
             status.print_status('Tried to call command in blacklisted channel, ignoring...')
             return
@@ -123,10 +161,23 @@ def main():
         status.print_status("{0} requested eight ball...".format(ctx.message.author.name))
         statistics["eightballs"] = statistics["eightballs"] + 1
 
-        answer = randint(0, len(ballAnswers) - 1)
-        status.print_status("Eight ball rolled {0}".format(str(answer)))
+        if len(args) == 0:
+            answer = randint(0, len(ballAnswersEmpty) - 1)
+            await ctx.send(ballAnswersEmpty[answer])
 
-        await ctx.send(ballAnswers[answer])
+            status.print_status("No question, eight ball rolled {0}".format(str(answer)))
+        else:
+            if notEmptyR.match(args[0]):
+                answer = randint(0, len(ballAnswers) - 1)
+                await ctx.send(ballAnswers[answer])
+
+                status.print_status("Eight ball rolled {0}".format(str(answer)))
+
+            else:
+                answer = randint(0, len(ballAnswersEmpty) - 1)
+                await ctx.send(ballAnswersEmpty[answer])
+
+                status.print_status("Empty queue, NICE TRY MATE")
 
     @bot.command(help='Generates a random number between 0 and 100 (if no parameters are given), 0 to x (if one'
                       ' parameter is given) or x and y (if two parameters are given)')
@@ -260,14 +311,35 @@ def main():
             status.print_status('User is currently in timeout')
             await ctx.send("Don't spam the rib")
 
+    @bot.command(help='Sends a random stream message. Only callable by super gay peoples')
+    async def streem(ctx):
+        if ctx.message.channel.id in channelBlacklist:
+            status.print_status('Tried to call command in blacklisted channel, ignoring...')
+            return
+
+        if perms.checkPermissions([ROLE_ADMIN], ctx.message.author):
+            for channel in ctx.message.author.guild.channels:
+                channelName = channel.name
+                if channelName.endswith("general"):
+                    randStremNr = randint(0, len(liveMessages) - 1)
+                    status.print_status('Found General, posting link...')
+                    await channel.send(liveMessages[randStremNr])
+                    return
+
+        else:
+            status.print_status('A non felix person tried to send the live message')
+
     # run bot with token
     bot.run(token)
 
 
 if __name__ == "__main__":
-    VERSION = "0.9.2"
+    # define some variables
+    VERSION = "0.10.0"
     COPYRIGHT_YEAR = "2019"
     AUTHOR = "SYRAPT0R"
 
     status.print_status('LAUNCHING SYRAPTB0T {0}, (c) {1} {2}'.format(VERSION, COPYRIGHT_YEAR, AUTHOR))
+
+    # start main loop
     main()
