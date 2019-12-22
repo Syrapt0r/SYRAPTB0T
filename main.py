@@ -60,18 +60,8 @@ def main():
     ribTimeoutInterval = 300
 
     # define 8ball answers
-    ballAnswers = ["It is certain", "Without a doubt", "You may rely on it", "Yes definitely",
-                   "It is decidedly so", "As I see it, yes", "Most likely", "Yes", "Outlook good",
-                   "Signs point to yes", "Reply hazy try again", "Better not tell you now", "Ask again later",
-                   "Cannot predict now", "Concentrate and ask again", "Don’t count on it", "Outlook not so good",
-                   "My sources say no", "Very doubtful", "My reply is no", "Lol nope", "Hah you wish",
-                   "Okay but only once", "Fiiine", "Count to 10 and ask again", "Why would I know that", "what",
-                   "If you dare ask me that again I will ban you", "no u", "Sure thing bro",
-                   "Hm? Sorry, wasn't listening"]
-
-    ballAnswersEmpty = ["what", "this works way better if you actually ask something", "and your question is...?",
-                        "uhhhh", "come back if you want an actual answer", "speak up", "[inhales] b o i", "right...",
-                        "did you seriously wake me up for this", "whut", "ok boomer", ">eIgHtBaLl"]
+    ballAnswers = fileOperations.readFile("eightball.txt")
+    ballAnswersEmpty = fileOperations.readFile("eightballEmpty.txt")
 
     status.print_status('Loaded {0} eightball answers'.format(len(ballAnswers)))
     status.print_status('Loaded {0} empty eightball answers'.format(len(ballAnswersEmpty)))
@@ -103,30 +93,15 @@ def main():
     jokePunchlineCount = len(jokePunchline) - 1
 
     # define bot thank responses
-    thankYous = ["You're welcome", "No u", "aw stop", "nawww", ":3", "No prob", "Happy to help", "^-^",
-                 "stahp it", "Thanks :3", "Just doing my best c:", "no thank YOU", "It's my duty ^-^",
-                 "ᶦ ᵈᶦᵈⁿᵗ ʰᵃᵛᵉ ᵃ ᶜʰᵒᶦᶜᵉ I mean thanks ^-^"]
-
+    thankYous = fileOperations.readFile("thanks.txt")
     status.print_status('Loaded {0} thanking answers'.format(len(thankYous)))
 
     # streem shid
-    liveMessages = ["Ayy <@&657671322813595670>, it's ya boi, uhh, I am like, streaming right now. Lol. So click like, "
-                    "here: https://www.twitch.tv/syrapt0r", "Wzup <@&657671322813595670>, I is live waho "
-                                                            "https://www.twitch.tv/syrapt0r",
-                    "Attention all <@&657671322813595670>, click "
-                    "https://www.twitch.tv/syrapt0r to win a free Xbox maybe", "<@&657671322813595670>! Assemble! or "
-                                                                               "something i dunno https://www.twitch.tv/syrapt0r",
-                    "https://www.twitch.tv/syrapt0r is now "
-                    "featuring epic stuff for <@&657671322813595670>. And other people. That's how twitch works.",
-                    "https://www.twitch.tv/syrapt0r is live. Go get em <@&657671322813595670>.", "Where were you when "
-                                                                                                 "https://www.twitch.tv/syrapt0r went live? I was eating dorito when <@&657671322813595670> call: "
-                                                                                                 "'felic is liv' 'no'"]
-
+    liveMessages = fileOperations.readFile("streamNotifications.txt")
     status.print_status('Loaded {0} streaming notifications'.format(len(liveMessages)))
 
     # initialize blacklisted channels
-    channelBlacklist = [473830853127176197, 473872015279783976, 473878623229575178, 633315876757831690,
-                        618472969735241759, 635260211178897419, 473877321711878175]
+    channelBlacklist = fileOperations.readFile("channelBlacklist.txt")
     status.print_status('Loaded {0} blacklisted channels'.format(len(channelBlacklist)))
 
     # set up bot instance
@@ -329,13 +304,85 @@ def main():
         else:
             status.print_status('A non felix person tried to send the live message')
 
+    @bot.command(help='Rolls a set amount of virtual dice')
+    async def roll(ctx, arg):
+        if ctx.message.channel.id in channelBlacklist:
+            status.print_status('Tried to call command in blacklisted channel, ignoring...')
+            return
+
+        status.print_status("{0} requested roll".format(ctx.message.author.name))
+
+        if arg is not None:
+            rollData = arg.split("d")
+
+        else:
+            await ctx.send("Invalid parameters. Make sure you provide one parameter in the form of \"[number of "
+                           "rolls]d[type of dice]\"")
+            return
+
+        if len(rollData) != 2:
+            await ctx.send("Invalid parameters. Make sure you provide one parameter in the form of \"[number of "
+                           "rolls]d[type of dice]\"")
+            return
+
+        try:
+            rolls = int(rollData[0])
+            dice = int(rollData[1])
+
+        except TypeError:
+            await ctx.send("You posted cringe bro")
+            return
+
+        except ValueError:
+            await ctx.send("You posted cringe bro")
+            return
+
+        if rolls * dice > 10000:
+            await ctx.send("Please choose lower parameters. What would you need this for anyway")
+            return
+
+        status.print_status("Rolling {0} {1}-sided dice".format(rolls, dice))
+
+        rollResults = []
+        totalResult = 0
+
+        for i in range(dice):
+            rollResults.append(0)
+
+        answerStr = "Rolls: "
+
+        for roll in range(rolls):
+            currentResult = randint(1, dice)
+            rollResults[currentResult - 1] += 1
+
+            totalResult += currentResult
+
+            if answerStr != "Rolls: ":
+                answerStr += ", "
+            answerStr += str(currentResult)
+
+        countStr = "Counts: "
+
+        for roll in range(dice):
+            if rollResults[roll] != 0:
+                if countStr != "Counts: ":
+                    countStr += ", "
+
+                countStr += "{0} x {1}".format(rollResults[roll], roll + 1)
+
+        await ctx.send(answerStr)
+
+        if rolls != 1:
+            await ctx.send(countStr)
+            await ctx.send("Total: {0}".format(totalResult))
+
     # run bot with token
     bot.run(token)
 
 
 if __name__ == "__main__":
     # define some variables
-    VERSION = "0.10.0"
+    VERSION = "0.11.0"
     COPYRIGHT_YEAR = "2019"
     AUTHOR = "SYRAPT0R"
 

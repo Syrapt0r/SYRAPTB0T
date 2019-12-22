@@ -43,3 +43,12 @@ def readToken():
         return configParser.get('token', 'token')
     else:
         return "MALFORMED_TOKEN_FILE"
+
+
+def readFile(file):
+
+    with open(file, "r") as f:
+        readList = f.readlines()
+        f.close()
+
+    return readList
