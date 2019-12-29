@@ -30,23 +30,32 @@ def saveStats(stats):
         conf.close()
 
 
-def readToken():
+def readTokenFile():
     configFile = 'token.txt'
+    tokenData = {"token": "", "token_twitch": ""}
 
     if path.exists(configFile):
         configParser = configparser.RawConfigParser()
         configParser.read(configFile)
     else:
-        return "NO_TOKEN_FILE"
+        tokenData["token"] = "NO_TOKEN_FILE"
+        tokenData["token_twitch"] = "NO_TOKEN_FILE"
+        return tokenData
 
-    if configParser.has_option('token', 'token'):
-        return configParser.get('token', 'token')
+    if configParser.has_option("token", "token"):
+        tokenData["token"] = configParser.get("token", "token")
     else:
-        return "MALFORMED_TOKEN_FILE"
+        tokenData["token"] = "MALFORMED_TOKEN_FILE"
+
+    if configParser.has_option("token", "token_twitch"):
+        tokenData["token_twitch"] = configParser.get("token", "token_twitch")
+    else:
+        tokenData["token_twitch"] = "MALFORMED_TOKEN_FILE"
+
+    return tokenData
 
 
 def readFile(file):
-
     with open(file, "r") as f:
         readList = f.readlines()
         f.close()

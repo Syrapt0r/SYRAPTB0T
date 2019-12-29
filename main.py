@@ -5,25 +5,35 @@ from random import randint
 from discord import File
 from discord.ext import commands
 
-from syraptbot import perms, status, fileOperations
+from syraptbot import perms, status, fileOperations, online
 import re
 
 
 def main():
     # load bot token
     status.print_status('Loading bot token...')
-    token = fileOperations.readToken()
+    tokenData = fileOperations.readTokenFile()
 
     # token file error handling
-    if token is "NO_TOKEN_FILE":
+    if tokenData["token"] is "NO_TOKEN_FILE":
         status.print_status("Token file not found. Make sure the file token.txt exists in the same folder as this "
                             "script.")
         exit(0)
-    elif token is "MALFORMED_TOKEN_FILE":
+    elif tokenData["token"] is "MALFORMED_TOKEN_FILE":
         status.print_status("Token file seems to be malformed. Make sure the file contains a key called \"token\".")
         exit(0)
 
     status.print_status('Bot token loaded.')
+
+    # twitch token
+    if tokenData["token_twitch"] is "MALFORMED_TOKEN_FILE":
+        status.print_status("Twitch token seems to be malformed. Make sure the file contains a key called "
+                            "\"token_twitch\".")
+        exit(0)
+
+    TWITCH_TOKEN = tokenData["token_twitch"]
+
+    status.print_status('Twitch token loaded.')
 
     # load statistics
     if path.exists("stats.txt"):
@@ -44,7 +54,7 @@ def main():
     ROLE_MOD_SUPER = "SUPERMODS OF DOOM"
 
     # epic regex
-    notEmpty = "[A-Za-z0-9?!.,:]"
+    notEmpty = "[_*A-Za-z0-9?!.,:]"
     notEmptyR = re.compile(notEmpty)
 
     # load rib picture paths
@@ -116,11 +126,14 @@ def main():
             return
 
         if perms.checkPermissions([ROLE_ADMIN, ROLE_MOD_SUPER], ctx.message.author):
-            status.print_status('Bot disconnecting...')
+            status.print_status('SHUTDOWN...')
             fileOperations.saveStats(statistics)
 
             await ctx.send('ok bye ._.')
+
+            status.print_status('Bot disconnecting...')
             await bot.close()
+
 
             exit(0)
         else:
@@ -286,24 +299,6 @@ def main():
             status.print_status('User is currently in timeout')
             await ctx.send("Don't spam the rib")
 
-    @bot.command(help='Sends a random stream message. Only callable by super gay peoples')
-    async def streem(ctx):
-        if ctx.message.channel.id in channelBlacklist:
-            status.print_status('Tried to call command in blacklisted channel, ignoring...')
-            return
-
-        if perms.checkPermissions([ROLE_ADMIN], ctx.message.author):
-            for channel in ctx.message.author.guild.channels:
-                channelName = channel.name
-                if channelName.endswith("general"):
-                    randStremNr = randint(0, len(liveMessages) - 1)
-                    status.print_status('Found General, posting link...')
-                    await channel.send(liveMessages[randStremNr])
-                    return
-
-        else:
-            status.print_status('A non felix person tried to send the live message')
-
     @bot.command(help='Rolls a set amount of virtual dice')
     async def roll(ctx, arg):
         if ctx.message.channel.id in channelBlacklist:
@@ -376,13 +371,16 @@ def main():
             await ctx.send(countStr)
             await ctx.send("Total: {0}".format(totalResult))
 
+    # run twitch connection test thread
+    bot.loop.create_task(online.testLivestream(bot, TWITCH_TOKEN, liveMessages))
+
     # run bot with token
-    bot.run(token)
+    bot.run(tokenData["token"])
 
 
 if __name__ == "__main__":
     # define some variables
-    VERSION = "0.11.0"
+    VERSION = "0.12.0"
     COPYRIGHT_YEAR = "2019"
     AUTHOR = "SYRAPT0R"
 
