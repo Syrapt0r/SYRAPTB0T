@@ -108,3 +108,6 @@ token.txt
 
 # generated statistic file
 stats.txt
+
+# pycharm stuff
+.idea/

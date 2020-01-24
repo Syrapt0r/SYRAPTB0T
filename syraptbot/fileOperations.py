@@ -5,59 +5,59 @@ from os import path
 from syraptbot import status
 
 
-def loadStats():
+def load_stats():
     status.print_status("Loading stats...")
 
     try:
         with open("stats.txt", "r") as conf:
-            confData = conf.readlines()
+            conf_data = conf.readlines()
             conf.close()
 
     except IOError:
         return "STAT_LOAD_ERROR"
 
-    statsDecode = json.loads(confData[0])
-    return statsDecode
+    stats_decode = json.loads(conf_data[0])
+    return stats_decode
 
 
-def saveStats(stats):
+def save_stats(stats):
     status.print_status("Saving stats...")
 
-    statsJson = json.dumps(stats)
+    stats_json = json.dumps(stats)
 
     with open("stats.txt", "w") as conf:
-        conf.write(statsJson)
+        conf.write(stats_json)
         conf.close()
 
 
-def readTokenFile():
-    configFile = 'token.txt'
-    tokenData = {"token": "", "token_twitch": ""}
+def read_token_file():
+    config_file = 'token.txt'
+    token_data = {"token": "", "token_twitch": ""}
 
-    if path.exists(configFile):
-        configParser = configparser.RawConfigParser()
-        configParser.read(configFile)
+    if path.exists(config_file):
+        config_parser = configparser.RawConfigParser()
+        config_parser.read(config_file)
     else:
-        tokenData["token"] = "NO_TOKEN_FILE"
-        tokenData["token_twitch"] = "NO_TOKEN_FILE"
-        return tokenData
+        token_data["token"] = "NO_TOKEN_FILE"
+        token_data["token_twitch"] = "NO_TOKEN_FILE"
+        return token_data
 
-    if configParser.has_option("token", "token"):
-        tokenData["token"] = configParser.get("token", "token")
+    if config_parser.has_option("token", "token"):
+        token_data["token"] = config_parser.get("token", "token")
     else:
-        tokenData["token"] = "MALFORMED_TOKEN_FILE"
+        token_data["token"] = "MALFORMED_TOKEN_FILE"
 
-    if configParser.has_option("token", "token_twitch"):
-        tokenData["token_twitch"] = configParser.get("token", "token_twitch")
+    if config_parser.has_option("token", "token_twitch"):
+        token_data["token_twitch"] = config_parser.get("token", "token_twitch")
     else:
-        tokenData["token_twitch"] = "MALFORMED_TOKEN_FILE"
+        token_data["token_twitch"] = "MALFORMED_TOKEN_FILE"
 
-    return tokenData
+    return token_data
 
 
-def readFile(file):
+def read_file(file):
     with open(file, "r") as f:
-        readList = f.readlines()
+        read_list = f.readlines()
         f.close()
 
-    return readList
+    return read_list

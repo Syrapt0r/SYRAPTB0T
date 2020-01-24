@@ -1,4 +1,4 @@
-def checkPermissions(roles, author):
+def check_permissions(roles, author):
     for role in roles:
         if role in [y.name.upper() for y in author.roles]:
             return True
