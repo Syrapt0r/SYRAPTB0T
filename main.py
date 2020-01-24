@@ -362,7 +362,7 @@ def main():
                 if count_str != "Counts: ":
                     count_str += ", "
 
-                count_str += "{0} x {1}".format(roll_results[roll], roll + 1)
+                count_str += "{0} x {1}".format(roll_results[current_roll], current_roll + 1)
 
         await ctx.send(answer_str)
 
