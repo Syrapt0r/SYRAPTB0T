@@ -1,13 +1,19 @@
 import asyncio
-import requests
 from random import randint
-from syraptbot import status
+
+import requests
+
+from syraptbot import status, fileOperations
+
+# load live messages
+live_messages = fileOperations.read_file("files/streamNotifications.txt")
+status.print_status('Loaded {0} streaming notifications'.format(len(live_messages)))
 
 
 # fetch the live status every five minutes
 # THIS IS A VERY NAIVE APPROACH. THIS SHOULD BE SWITCHED TO WEBHOOK ASAP
 
-async def test_livestream(bot, twitch_token, live_messages):
+async def test_livestream(bot, twitch_token):
     await bot.wait_until_ready()
 
     message_posted = False
