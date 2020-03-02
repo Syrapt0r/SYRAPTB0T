@@ -13,7 +13,7 @@ status.print_status('Loaded {0} streaming notifications'.format(len(live_message
 # fetch the live status every five minutes
 # THIS IS A VERY NAIVE APPROACH. THIS SHOULD BE SWITCHED TO WEBHOOK ASAP
 
-async def test_livestream(bot, twitch_token):
+async def test_livestream(bot, twitch_token, twitch_name):
     await bot.wait_until_ready()
 
     message_posted = False
@@ -25,7 +25,7 @@ async def test_livestream(bot, twitch_token):
         skip_ping = False
 
         try:
-            r = requests.get("https://api.twitch.tv/helix/streams?user_login=syrapt0r",
+            r = requests.get("https://api.twitch.tv/helix/streams?user_login={0}".format(twitch_name),
                              headers={"client-id": twitch_token})
             json_request = r.json()
 

@@ -104,7 +104,7 @@ venv.bak/
 .mypy_cache/
 
 # token file
-token.txt
+config.txt
 
 # generated statistic file
 stats.txt

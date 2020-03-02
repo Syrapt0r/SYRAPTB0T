@@ -1,6 +1,15 @@
-import configparser
 import json
-from os import path
+
+import yaml
+
+from syraptbot import status
+
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+
+except ImportError:
+    status.print_status("[YAML] Using compatibility YAML converters")
+    from yaml import Loader, Dumper
 
 from syraptbot import status
 
@@ -30,29 +39,22 @@ def save_stats(stats):
         conf.close()
 
 
-def read_token_file():
-    config_file = 'token.txt'
-    token_data = {"token": "", "token_twitch": ""}
+def read_config_file():
+    with open("config.txt", "r") as f:
+        config_data = yaml.load(f, Loader=Loader)
 
-    if path.exists(config_file):
-        config_parser = configparser.RawConfigParser()
-        config_parser.read(config_file)
-    else:
-        token_data["token"] = "NO_TOKEN_FILE"
-        token_data["token_twitch"] = "NO_TOKEN_FILE"
-        return token_data
+    return config_data
 
-    if config_parser.has_option("token", "token"):
-        token_data["token"] = config_parser.get("token", "token")
-    else:
-        token_data["token"] = "MALFORMED_TOKEN_FILE"
 
-    if config_parser.has_option("token", "token_twitch"):
-        token_data["token_twitch"] = config_parser.get("token", "token_twitch")
-    else:
-        token_data["token_twitch"] = "MALFORMED_TOKEN_FILE"
+def generate_default_config():
+    data = {"token_discord": "", "token_twitch": "", "twitch_username": ""}
 
-    return token_data
+    data_dump = yaml.dump(data, Dumper=Dumper)
+
+    with open("config.txt", "w+") as f:
+        f.writelines(data_dump)
+
+    print("Generated new config in \"config.txt\". Script is now terminating.")
 
 
 def read_file(file):

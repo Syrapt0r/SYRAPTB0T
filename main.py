@@ -1,3 +1,5 @@
+from os.path import isfile
+
 from discord.ext import commands
 
 from syraptbot import perms, status, fileOperations, online, botCommands
@@ -5,31 +7,31 @@ from syraptbot import perms, status, fileOperations, online, botCommands
 
 def main():
     # load bot token
-    status.print_status('Loading bot token...')
-    token_data = fileOperations.read_token_file()
+    status.print_status('Loading config...')
+    config_data = fileOperations.read_config_file()
 
-    # token file error handling
-    if token_data["token"] is "NO_TOKEN_FILE":
-        status.print_status("Token file not found. Make sure the file token.txt exists in the same folder as this "
-                            "script.")
-        exit(0)
-    elif token_data["token"] is "MALFORMED_TOKEN_FILE":
-        status.print_status("Token file seems to be malformed. Make sure the file contains a key called \"token\".")
+    status.print_status('Config file loaded.')
+
+    # check that we have a discord token
+    if config_data["token_discord"] is "":
+        status.print_status("No Discord token specified, aborting...")
         exit(0)
 
-    status.print_status('Bot token loaded.')
+    status.print_status("Discord token loaded.")
 
     twitch_enabled = True
 
     # twitch token
-    if token_data["token_twitch"] is "MALFORMED_TOKEN_FILE":
-        status.print_status("Twitch token seems to be malformed. Make sure the file contains a key called "
-                            "\"token_twitch\".")
+    twitch_token = ""
+    twitch_username = ""
+
+    if config_data["token_twitch"] is "" or config_data["twitch_username"] is "":
         twitch_enabled = False
 
-    twitch_token = token_data["token_twitch"]
-
     if twitch_enabled:
+        twitch_token = config_data["token_twitch"]
+        twitch_username = config_data["twitch_username"]
+
         status.print_status('Twitch token loaded.')
 
     # initialize blacklisted channels
@@ -38,7 +40,6 @@ def main():
 
     # set up bot instance
     bot = commands.Bot(command_prefix='>')
-    status.print_status('Bot connected!')
 
     # register bot commands
     @bot.command(help='Closes the bot. Only callable by admins.')
@@ -89,20 +90,26 @@ def main():
 
     # run twitch connection test thread
     if twitch_enabled:
-        bot.loop.create_task(online.test_livestream(bot, twitch_token))
+        bot.loop.create_task(online.test_livestream(bot, twitch_token, twitch_username))
 
     else:
-        status.print_status("Disabled twitch test due to twitch token error.")
+        status.print_status("Disabled twitch test.")
 
     # run bot with token
-    bot.run(token_data["token"])
+    status.print_status('Bot connected!')
+    bot.run(config_data["token_discord"])
 
 
 if __name__ == "__main__":
     # define some variables
-    VERSION = "0.13.1"
+    VERSION = "0.14"
     COPYRIGHT_YEAR = "2019-2020"
     AUTHOR = "SYRAPT0R"
+
+    # make sure a config exists
+    if not isfile("config.txt"):
+        fileOperations.generate_default_config()
+        exit(0)
 
     status.print_status('LAUNCHING SYRAPTB0T {0}, (c) {1} {2}'.format(VERSION, COPYRIGHT_YEAR, AUTHOR))
 
