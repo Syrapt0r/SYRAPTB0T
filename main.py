@@ -102,7 +102,7 @@ def main():
 
 if __name__ == "__main__":
     # define some variables
-    VERSION = "0.14"
+    VERSION = "0.14.1"
     COPYRIGHT_YEAR = "2019-2020"
     AUTHOR = "SYRAPT0R"
 

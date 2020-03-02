@@ -35,7 +35,7 @@ for (dirpath, dirnames, filenames) in walk("ribs"):
     rib_pictures.extend(filenames)
     break
 
-rib_timeout = []
+rib_timeout = {}
 rib_timeout_interval = 300
 
 status.print_status('Loaded {0} rib pictures'.format(len(rib_pictures)))
@@ -199,8 +199,8 @@ async def ribs(ctx):
     status.print_status("{0} requested ribs".format(ctx.message.author.name))
     statistics["ribs"] = statistics["ribs"] + 1
 
-    if ctx.message.author.id not in rib_timeout:
-        rib_timeout[ctx.message.author.id] = datetime.now()
+    if str(ctx.message.author.id) not in rib_timeout:
+        rib_timeout.update({str(ctx.message.author.id): datetime.now()})
 
         rib_nr = randint(0, len(rib_pictures) - 1)
         await ctx.message.channel.send(file=File(r"ribs/" + rib_pictures[rib_nr]))
@@ -208,12 +208,12 @@ async def ribs(ctx):
         statistics["ribs"] = statistics["ribs"] + 1
         return
 
-    compare_time = rib_timeout[ctx.message.author.id] + timedelta(seconds=rib_timeout_interval)
+    compare_time = rib_timeout[str(ctx.message.author.id)] + timedelta(seconds=rib_timeout_interval)
 
     if datetime.now() > compare_time:
         statistics["ribs"] = statistics["ribs"] + 1
 
-        rib_timeout[ctx.message.author.id] = datetime.now()
+        rib_timeout.update({str(ctx.message.author.id): datetime.now()})
         rib_nr = randint(0, len(rib_pictures) - 1)
         await ctx.message.channel.send(file=File(r"ribs/" + rib_pictures[rib_nr]))
     else:
