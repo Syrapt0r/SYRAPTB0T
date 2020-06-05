@@ -12,14 +12,14 @@ if path.exists("stats.txt"):
     statistics = fileOperations.load_stats()
 
     if statistics == "STAT_LOAD_ERROR":
-        status.print_status("Error loading statistics. Make sure the statistic file is not malformed.")
+        status.print_status("[STATS] Error loading statistics. Make sure the statistic file is not malformed.")
         exit(0)
 
-    status.print_status("Stats loaded successfully.")
+    status.print_status("[STATS] Stats loaded successfully.")
 else:
     statistics = {"eightballs": 0, "jokes": 0, "randoms": 0, "thanks": 0, "stats": 0, "ribs": 0, "rolls": 0}
     fileOperations.save_stats(statistics)
-    status.print_status("No previous stats found, initiated new stats.")
+    status.print_status("[STATS] No previous stats found, initiated new stats.")
 
 # define some constants
 role_admin = "BIG GAY"
@@ -27,7 +27,7 @@ role_mod_super = "SUPERMODS OF DOOM"
 
 # epic regex
 not_empty = "[_*A-Za-z0-9?!.,:]"
-not_empty_r = re.compile(not_empty)
+not_empty_regex = re.compile(not_empty)
 
 # load rib picture paths
 rib_pictures = []
@@ -38,77 +38,77 @@ for (dirpath, dirnames, filenames) in walk("ribs"):
 rib_timeout = {}
 rib_timeout_interval = 300
 
-status.print_status('Loaded {0} rib pictures'.format(len(rib_pictures)))
+status.print_status('[STATS] Loaded {0} rib pictures'.format(len(rib_pictures)))
 
 # define 8ball answers
 ball_answers = fileOperations.read_file("files/eightball.txt")
 ball_answers_empty = fileOperations.read_file("files/eightballEmpty.txt")
 
-status.print_status('Loaded {0} eightball answers'.format(len(ball_answers)))
-status.print_status('Loaded {0} empty eightball answers'.format(len(ball_answers_empty)))
+status.print_status('[STATS] Loaded {0} eightball answers'.format(len(ball_answers)))
+status.print_status('[STATS] Loaded {0} empty eightball answers'.format(len(ball_answers_empty)))
 
 # define bot thank responses
 thank_yous = fileOperations.read_file("files/thanks.txt")
-status.print_status('Loaded {0} thanking answers'.format(len(thank_yous)))
+status.print_status('[STATS] Loaded {0} thanking answers'.format(len(thank_yous)))
 
 
 async def shutdown(bot, ctx):
     if perms.check_permissions([role_admin, role_mod_super], ctx.message.author):
-        status.print_status('SHUTDOWN...')
+        status.print_status('[CMD>shutdown] SHUTDOWN...')
         fileOperations.save_stats(statistics)
 
         await ctx.send('ok bye ._.')
 
-        status.print_status('Bot disconnecting...')
+        status.print_status('[CMD>shutdown] Bot disconnecting...')
         await bot.close()
     else:
-        status.print_status('Got shutdown command from user with insufficient permissions')
+        status.print_status('[CMD>shutdown] Got shutdown command from user with insufficient permissions')
         await ctx.send("You don't have the power to stop me, fool")
 
 
 async def eightball(ctx, args):
-    status.print_status("{0} requested eight ball...".format(ctx.message.author.name))
+    status.print_status("[CMD>eightball] {0} requested eight ball...".format(ctx.message.author.name))
     statistics["eightballs"] = statistics["eightballs"] + 1
 
     if len(args) == 0:
         answer = randint(0, len(ball_answers_empty) - 1)
         await ctx.send(ball_answers_empty[answer])
 
-        status.print_status("No question, eight ball rolled {0}".format(str(answer)))
+        status.print_status("[CMD>eightball] No question, eight ball rolled {0}".format(str(answer)))
     else:
-        if not_empty_r.match(args[0]):
+        if not_empty_regex.match(args[0]):
             answer = randint(0, len(ball_answers) - 1)
             await ctx.send(ball_answers[answer])
 
-            status.print_status("Eight ball rolled {0}".format(str(answer)))
+            status.print_status("[CMD>eightball] Eight ball rolled {0}".format(str(answer)))
 
         else:
             answer = randint(0, len(ball_answers_empty) - 1)
             await ctx.send(ball_answers_empty[answer])
 
-            status.print_status("Empty queue, NICE TRY MATE")
+            status.print_status("[CMD>eightball] Empty queue, NICE TRY MATE")
 
 
 async def random(ctx, args):
-    status.print_status("{0} requested random number...".format(ctx.message.author.name))
+    status.print_status("[CMD>random] {0} requested random number...".format(ctx.message.author.name))
     statistics["randoms"] = statistics["randoms"] + 1
 
     try:
         if len(args) == 0:
-            status.print_status("[RANDOM] no parameters, running default roll...")
+            status.print_status("[CMD>random] no parameters, running default roll...")
 
             await ctx.send("No range given, defaulting to 0 - 100...")
             answer = randint(0, 100)
             await ctx.send("Random number: {0}".format(str(answer)))
 
         elif len(args) == 1:
-            status.print_status("[RANDOM] 1 parameter, running roll...")
+            status.print_status("[CMD>random] 1 parameter, running roll...")
 
             answer = randint(0, int(args[0]))
             await ctx.send("Random number: {0}".format(str(answer)))
 
         elif len(args) == 2:
-            status.print_status("[RANDOM] 2 parameters, running roll...")
+            status.print_status("[CMD>random] 2 parameters, running roll...")
 
             int1 = int(args[0])
             int2 = int(args[1])
@@ -118,7 +118,7 @@ async def random(ctx, args):
             await ctx.send("Random number: {0}".format(str(answer)))
 
         else:
-            status.print_status("[RANDOM] too many parameters, aborting...")
+            status.print_status("[CMD>random] too many parameters, aborting...")
             await ctx.send("Please only supply a maximum of two numbers. Thank")
 
     except TypeError:
@@ -128,11 +128,11 @@ async def random(ctx, args):
 
 
 async def thanks(ctx):
-    status.print_status("{0} said thanks :3".format(ctx.message.author.name))
+    status.print_status("[CMD>thanks] {0} said thanks :3".format(ctx.message.author.name))
     statistics["thanks"] = statistics["thanks"] + 1
 
     answer = randint(0, len(thank_yous) - 1)
-    status.print_status("Thank you message: {0}".format(str(answer)))
+    status.print_status("[CMD>thanks] Thank you message: {0}".format(str(answer)))
 
     await ctx.send(thank_yous[answer])
 
@@ -165,7 +165,7 @@ joke_punchline_count = len(joke_punchline) - 1
 
 
 async def joke(ctx):
-    status.print_status("{0} requested joke".format(ctx.message.author.name))
+    status.print_status("[CMD>joke] {0} requested joke".format(ctx.message.author.name))
     statistics["jokes"] = statistics["jokes"] + 1
 
     begin = randint(0, joke_begin_count)
@@ -182,7 +182,7 @@ async def joke(ctx):
 
 
 async def stats(ctx):
-    status.print_status("{0} requested stats".format(ctx.message.author.name))
+    status.print_status("[CMD>stats] {0} requested stats".format(ctx.message.author.name))
     statistics["stats"] = statistics["stats"] + 1
 
     await ctx.send(
@@ -196,7 +196,7 @@ async def stats(ctx):
 
 
 async def ribs(ctx):
-    status.print_status("{0} requested ribs".format(ctx.message.author.name))
+    status.print_status("[CMD>ribs] {0} requested ribs".format(ctx.message.author.name))
     statistics["ribs"] = statistics["ribs"] + 1
 
     if str(ctx.message.author.id) not in rib_timeout:
@@ -217,12 +217,12 @@ async def ribs(ctx):
         rib_nr = randint(0, len(rib_pictures) - 1)
         await ctx.message.channel.send(file=File(r"ribs/" + rib_pictures[rib_nr]))
     else:
-        status.print_status('User is currently in timeout')
+        status.print_status('[CMD>ribs] User is currently in timeout')
         await ctx.send("Don't spam the rib")
 
 
 async def roll(ctx, arg):
-    status.print_status("{0} requested roll".format(ctx.message.author.name))
+    status.print_status("[CMD>roll] {0} requested roll".format(ctx.message.author.name))
     statistics["rolls"] = statistics["rolls"] + 1
 
     if arg is not None:
@@ -254,7 +254,7 @@ async def roll(ctx, arg):
         await ctx.send("Please choose lower parameters. What would you need this for anyway")
         return
 
-    status.print_status("Rolling {0} {1}-sided dice".format(rolls, dice))
+    status.print_status("[CMD>roll] Rolling {0} {1}-sided dice".format(rolls, dice))
 
     roll_results = []
     total_result = 0

@@ -103,8 +103,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# token file
+# token files
 config.txt
+files/twitchToken.txt
 
 # generated statistic file
 stats.txt

@@ -11,7 +11,7 @@ def check_permissions(roles, author):
 
 def channel_permitted(ctx, channel_blacklist):
     if ctx.message.channel.id in channel_blacklist:
-        status.print_status('Tried to call command in blacklisted channel, ignoring...')
+        status.print_status('[PERMS] Tried to call command in blacklisted channel, ignoring...')
         return False
 
     return True

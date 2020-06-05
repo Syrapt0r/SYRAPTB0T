@@ -2,41 +2,45 @@ from os.path import isfile
 
 from discord.ext import commands
 
-from syraptbot import perms, status, fileOperations, online, botCommands
+from syraptbot import perms, status, fileOperations, twitch, botCommands
 
 
 def main():
     # load bot token
-    status.print_status('Loading config...')
+    status.print_status('[MAIN] Loading config...')
     config_data = fileOperations.read_config_file()
 
-    status.print_status('Config file loaded.')
+    status.print_status('[MAIN] Config file loaded.')
 
     # check that we have a discord token
     if config_data["token_discord"] is "":
-        status.print_status("No Discord token specified, aborting...")
+        status.print_status("[MAIN] No Discord token specified, aborting...")
         exit(0)
 
+    discord_guild = config_data["guild_discord"]
     status.print_status("Discord token loaded.")
 
     twitch_enabled = True
 
     # twitch token
-    twitch_token = ""
-    twitch_username = ""
+    twitch_c_id = ""
+    twitch_c_secret = ""
+    twitch_usernames = ""
 
-    if config_data["token_twitch"] is "" or config_data["twitch_username"] is "":
+    if config_data["twitch_client_id"] is "" or config_data["twitch_usernames"] is "":
         twitch_enabled = False
 
     if twitch_enabled:
-        twitch_token = config_data["token_twitch"]
-        twitch_username = config_data["twitch_username"]
+        twitch_c_id = config_data["twitch_client_id"]
+        twitch_c_secret = config_data["twitch_client_secret"]
 
-        status.print_status('Twitch token loaded.')
+        twitch_usernames = config_data["twitch_usernames"]
+
+        status.print_status('[MAIN] Twitch data loaded.')
 
     # initialize blacklisted channels
     channel_blacklist = fileOperations.read_file("files/channelBlacklist.txt")
-    status.print_status('Loaded {0} blacklisted channels'.format(len(channel_blacklist)))
+    status.print_status('[MAIN] Loaded {0} blacklisted channels'.format(len(channel_blacklist)))
 
     # set up bot instance
     bot = commands.Bot(command_prefix='>')
@@ -90,19 +94,20 @@ def main():
 
     # run twitch connection test thread
     if twitch_enabled:
-        bot.loop.create_task(online.test_livestream(bot, twitch_token, twitch_username))
+        twitch_api = twitch.TwitchAPI(bot, twitch_c_id, twitch_c_secret, twitch_usernames, discord_guild)
+        bot.loop.create_task(twitch_api.check_twitch_channels(bot))
 
     else:
-        status.print_status("Disabled twitch test.")
+        status.print_status("[MAIN] Disabled twitch test.")
 
     # run bot with token
-    status.print_status('Bot connected!')
+    status.print_status('[MAIN] Bot connected!')
     bot.run(config_data["token_discord"])
 
 
 if __name__ == "__main__":
     # define some variables
-    VERSION = "0.14.1"
+    VERSION = "0.15"
     COPYRIGHT_YEAR = "2019-2020"
     AUTHOR = "SYRAPT0R"
 
@@ -111,7 +116,7 @@ if __name__ == "__main__":
         fileOperations.generate_default_config()
         exit(0)
 
-    status.print_status('LAUNCHING SYRAPTB0T {0}, (c) {1} {2}'.format(VERSION, COPYRIGHT_YEAR, AUTHOR))
+    status.print_status('#### LAUNCHING SYRAPTB0T {0}, (c) {1} {2} ####'.format(VERSION, COPYRIGHT_YEAR, AUTHOR))
 
     # start main loop
     main()

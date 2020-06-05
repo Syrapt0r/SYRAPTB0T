@@ -1,4 +1,5 @@
 import json
+from os.path import isfile
 
 import yaml
 
@@ -8,14 +9,14 @@ try:
     from yaml import CLoader as Loader, CDumper as Dumper
 
 except ImportError:
-    status.print_status("[YAML] Using compatibility YAML converters")
+    status.print_status("[FILE] Using compatibility YAML converters")
     from yaml import Loader, Dumper
 
 from syraptbot import status
 
 
 def load_stats():
-    status.print_status("Loading stats...")
+    status.print_status("[FILE] Loading stats...")
 
     try:
         with open("stats.txt", "r") as conf:
@@ -30,7 +31,7 @@ def load_stats():
 
 
 def save_stats(stats):
-    status.print_status("Saving stats...")
+    status.print_status("[FILE] Saving stats...")
 
     stats_json = json.dumps(stats)
 
@@ -47,7 +48,8 @@ def read_config_file():
 
 
 def generate_default_config():
-    data = {"token_discord": "", "token_twitch": "", "twitch_username": ""}
+    data = {"token_discord": "", "guild_discord": "", "twitch_client_id": "", "twitch_client_secret": "",
+            "twitch_username": ""}
 
     data_dump = yaml.dump(data, Dumper=Dumper)
 
@@ -63,3 +65,25 @@ def read_file(file):
         f.close()
 
     return read_list
+
+
+def save_twitch_api_data(token_data):
+    token_data_writeable = json.dumps(token_data)
+
+    with open("files/twitchToken.txt", "w") as twitch_file:
+        twitch_file.write(token_data_writeable)
+        twitch_file.close()
+
+
+def load_twitch_api_data():
+    with open("files/twitchToken.txt", "r") as f:
+        token_data = f.read()
+        f.close()
+
+    token_data_loadable = json.loads(token_data)
+
+    return token_data_loadable
+
+
+def has_twitch_api_data():
+    return isfile("files/twitchToken.txt")
