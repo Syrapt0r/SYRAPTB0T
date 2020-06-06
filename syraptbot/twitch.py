@@ -126,7 +126,6 @@ class TwitchAPI:
                 # if we are currently ignoring this user, we don't have to call the api at all
                 if channel.upper() in self.twitch_username_skip_list:
                     if self.twitch_username_skip_list[channel.upper()] > datetime.now():
-                        status.print_status("Ignoring {0} lol".format(channel.upper()))
                         continue
 
                 # one time print of all checks
