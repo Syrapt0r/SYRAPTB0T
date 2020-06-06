@@ -77,7 +77,7 @@ class TwitchAPI:
             self.auth_token = request_data["access_token"]
 
     def check_token_validity_and_request_new_if_necessary(self):
-        status.print_status("[TWITCH] Validating Token {0}".format(self.auth_token))
+        status.print_status("[TWITCH] Validating Access Token...")
         validation_request = requests.get(self.API_URL_TOKEN + "validate",
                                           headers={"Authorization": "OAuth {0}".format(self.auth_token)})
         data = validation_request.json()
